@@ -10,6 +10,7 @@ import RealmSwift
 
 class ToDoListItem: Object {
     @objc dynamic var item: String = ""
+    @objc dynamic var isDone: Bool = false
 }
 
 
@@ -35,7 +36,7 @@ class ViewController: UIViewController {
     @objc func addButtonTapped() {
         var alertTextField: UITextField?
         
-        let alert = UIAlertController(title: "To Doを入力してください", message: "", preferredStyle: UIAlertController.Style.alert)
+        let alert = UIAlertController(title: "To Doを入力してください", message: "", preferredStyle: .alert)
         
         alert.addTextField(configurationHandler: {(textField: UITextField!) in
             alertTextField = textField
@@ -81,6 +82,22 @@ extension ViewController: UITableViewDelegate, UITableViewDataSource {
         
         var content = cell.defaultContentConfiguration()
         content.text = data[indexPath.row].item
+        
+        let attributeString = NSMutableAttributedString(string: data[indexPath.row].item)
+        let range = NSMakeRange(0, attributeString.length)
+        
+        //完了済みセルの文字は灰色＆斜線にする
+        if data[indexPath.row].isDone == true {
+            cell.tintColor = .systemPink//@色が変わらない
+            attributeString.addAttribute(NSAttributedString.Key.strikethroughStyle, value: 2, range: range)
+            //  打ち消し線も灰色にしたい
+//            attributeString.attribute(.strikethroughColor: UIColor.gray, at: 2, effectiveRange: range)
+            
+        } else {
+            attributeString.removeAttribute(.strikethroughStyle, range: range)
+            
+        }
+        content.attributedText = attributeString
         cell.contentConfiguration = content
         return cell
     }
@@ -95,6 +112,21 @@ extension ViewController: UITableViewDelegate, UITableViewDataSource {
         self.data.remove(at: indexPath.row)
         tableView.deleteRows(at: [indexPath], with: .automatic)
     }
-
-
+    
+    //cell選択時にisDoneのステータスを変更させる
+    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        //isDone値の変更
+        try! realm.write{
+            data[indexPath.row].isDone.toggle()
+        }
+        //データの更新
+        fetchDataFromRealm()
+        
+    }
+    
+    func tableView(_ tableView: UITableView, canEditRowAt indexPath: IndexPath) -> Bool {
+        return true
+    }
+    
+    
 }
